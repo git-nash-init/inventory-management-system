@@ -36,6 +36,25 @@
   --bad-bg: #2e1f1b;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --paper: #161513;
+  --surface: #1d1c19;
+  --surface-2: #26241f;
+  --ink: #ebe8e1;
+  --muted: #9a968d;
+  --line: #36342e;
+  --accent: #4fa89f;
+  --accent-ink: #10100e;
+  --ok: #7fb58a;
+  --warn: #d4a24a;
+  --bad: #d98574;
+  --ok-bg: #1f2a21;
+  --warn-bg: #2d2617;
+  --bad-bg: #2e1f1b;
+  }
+}
+
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
