@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --paper: #f6f5f1;
+  --surface: #fbfaf7;
+  --surface-2: #efede6;
+  --ink: #1c1b19;
+  --muted: #6b6862;
+  --line: #dad7cf;
+  --accent: #0f5c55;
+  --accent-ink: #f6f5f1;
+  --ok: #2f6b3a;
+  --warn: #9a6200;
+  --bad: #a23b2a;
+  --ok-bg: #e4ece3;
+  --warn-bg: #f1e8d3;
+  --bad-bg: #f0dfda;
+}
+
+[data-theme="dark"] {
+  --paper: #161513;
+  --surface: #1d1c19;
+  --surface-2: #26241f;
+  --ink: #ebe8e1;
+  --muted: #9a968d;
+  --line: #36342e;
+  --accent: #4fa89f;
+  --accent-ink: #10100e;
+  --ok: #7fb58a;
+  --warn: #d4a24a;
+  --bad: #d98574;
+  --ok-bg: #1f2a21;
+  --warn-bg: #2d2617;
+  --bad-bg: #2e1f1b;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-ok-bg: var(--ok-bg);
+  --color-warn-bg: var(--warn-bg);
+  --color-bad-bg: var(--bad-bg);
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --radius: 3px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 3px;
+}
+
+* { border-color: var(--line); }
+
+html { background: var(--paper); color: var(--ink); }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.num, .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+a { color: inherit; }
+.link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Skeletons: static tint, no shimmer gradient */
+.skeleton { background: var(--surface-2); border-radius: var(--radius); }
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { animation: pulse-opacity 1.4s steps(2, end) infinite; }
+  @keyframes pulse-opacity { 50% { opacity: 0.55; } }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}
