@@ -262,6 +262,8 @@ export type JournalEntry = {
   refType?: string;
   refId?: string;
   lines: JournalLine[];
+  /** Bank reconciliation: accountId -> statement date on which this entry cleared. */
+  cleared?: Record<string, string>;
   createdAt: string;
 };
 

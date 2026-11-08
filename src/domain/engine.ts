@@ -663,6 +663,16 @@ export function createVoucher(state: State, input: VoucherInput, actor: string):
   return e;
 }
 
+export function setCleared(state: State, entryId: string, accountId: string, date: string | null) {
+  const e = state.journal.find((x) => x.id === entryId);
+  if (!e) throw new RepoError("Entry not found.", "ours");
+  if (!e.lines.some((l) => l.accountId === accountId)) throw new RepoError("This entry does not touch that account.", "input");
+  const next = { ...(e.cleared ?? {}) };
+  if (date) next[accountId] = date;
+  else delete next[accountId];
+  e.cleared = next;
+}
+
 export function expenseCategoryAccount(label: string): string {
   return EXPENSE_CATEGORIES.find((c) => c.label === label)?.accountId ?? "acc-misc";
 }

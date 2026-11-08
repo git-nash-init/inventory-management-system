@@ -7,6 +7,7 @@ import {
   createVoucher,
   logAudit,
   recordPayment,
+  setCleared,
   savePartyOpening,
   saveProductOpening,
   transferStock,
@@ -202,6 +203,7 @@ export class DemoRepo implements Repo {
   journal: Repo["journal"] = {
     list: async () => clone(this.s().journal),
     createVoucher: async (input) => this.tx((s) => createVoucher(s, input, ACTOR)),
+    setCleared: async (entryId, accountId, date) => this.tx((s) => setCleared(s, entryId, accountId, date)),
   };
 
   expenses: Repo["expenses"] = {

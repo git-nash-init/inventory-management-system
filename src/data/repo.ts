@@ -52,7 +52,12 @@ export interface Repo {
     setEinvoice(id: string, data: { irn?: string; ackNo?: string; ackDate?: string; ewayBillNo?: string }): Promise<void>;
   };
   payments: { list(): Promise<Payment[]>; record(input: PaymentInput): Promise<Payment> };
-  journal: { list(): Promise<JournalEntry[]>; createVoucher(input: VoucherInput): Promise<JournalEntry> };
+  journal: {
+    list(): Promise<JournalEntry[]>;
+    createVoucher(input: VoucherInput): Promise<JournalEntry>;
+    /** Mark a bank entry as cleared on a statement date, or pass null to un-clear. */
+    setCleared(entryId: string, accountId: string, date: string | null): Promise<void>;
+  };
   expenses: { list(): Promise<Expense[]>; create(input: ExpenseInput): Promise<Expense> };
   team: {
     list(): Promise<Member[]>;
