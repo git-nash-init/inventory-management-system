@@ -34,39 +34,31 @@ function RecordDialog({ direction, open, onOpenChange, presetParty, presetDoc }:
   const parties = useParties();
   const accounts = useAccounts();
   const docs = useDocs(kind);
-  const [partyId, setPartyId] = React.useState(presetParty ?? "");
+  const [partyTouched, setPartyTouched] = React.useState<string | undefined>();
   const [date, setDate] = React.useState(toISODate(new Date()));
-  const [amount, setAmount] = React.useState<string>("");
+  const [amountTouched, setAmountTouched] = React.useState<string | undefined>();
+  const [allocTouched, setAllocTouched] = React.useState<Record<string, string> | undefined>();
   const [mode, setMode] = React.useState<PaymentMode>("bank");
   const [accountId, setAccountId] = React.useState("acc-bank");
   const [reference, setReference] = React.useState("");
   const [notes, setNotes] = React.useState("");
-  const [alloc, setAlloc] = React.useState<Record<string, string>>({});
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [done, setDone] = React.useState<Payment>();
   const record = useRepoMutation((i: PaymentInput) => getRepo().payments.record(i));
+
+  // Defaults come from the document the dialog was opened for, until the user edits them.
+  const presetDocObj = presetDoc ? docs.data?.find((x) => x.id === presetDoc) : undefined;
+  const partyId = partyTouched ?? presetParty ?? presetDocObj?.partyId ?? "";
+  const amount = amountTouched ?? (presetDocObj ? String(outstanding(presetDocObj)) : "");
+  const alloc = allocTouched ?? (presetDocObj ? { [presetDocObj.id]: String(outstanding(presetDocObj)) } : {});
+  const setPartyId = (v: string) => setPartyTouched(v);
+  const setAmount = (v: string) => setAmountTouched(v);
+  const setAlloc = (v: Record<string, string> | ((a: Record<string, string>) => Record<string, string>)) => setAllocTouched(typeof v === "function" ? v(alloc) : v);
 
   const open_ = React.useMemo(
     () => (docs.data ?? []).filter((d) => d.partyId === partyId && d.status === "final" && isInvoiceLike(d.kind, d.type) && outstanding(d) > 0.005).sort((a, b) => a.date.localeCompare(b.date)),
     [docs.data, partyId],
   );
-
-  // Prefill the amount and allocation when opened from a specific document.
-  const appliedPreset = React.useRef(false);
-  React.useEffect(() => {
-    if (!open || appliedPreset.current || !presetDoc || !docs.data) return;
-    const d = docs.data.find((x) => x.id === presetDoc);
-    if (d) {
-      appliedPreset.current = true;
-      const due = outstanding(d);
-      const id = requestAnimationFrame(() => {
-        setPartyId(d.partyId ?? "");
-        setAmount(String(due));
-        setAlloc({ [d.id]: String(due) });
-      });
-      return () => cancelAnimationFrame(id);
-    }
-  }, [open, presetDoc, docs.data]);
 
   const amt = Number(amount) || 0;
   const allocated = round2(Object.values(alloc).reduce((a, v) => a + (Number(v) || 0), 0));

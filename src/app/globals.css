@@ -92,7 +92,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.num, .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.num, .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 0.94em; }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 

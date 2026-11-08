@@ -24,7 +24,7 @@ export function ProductCombobox({
   const [q, setQ] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const [active, setActive] = React.useState(0);
-  const fuse = React.useMemo(() => new Fuse(products.filter((p) => p.active), { keys: ["name", "sku", "barcode", "hsn", "brand"], threshold: 0.3, ignoreLocation: true }), [products]);
+  const fuse = React.useMemo(() => new Fuse(products.filter((p) => p.active), { keys: ["name", "sku", "barcode", "hsn", "brand"], threshold: 0.2, ignoreLocation: true }), [products]);
   const results = React.useMemo(() => (q.trim() ? fuse.search(q.trim()).slice(0, 8).map((r) => r.item) : []), [q, fuse]);
 
   function pick(p: Product) {

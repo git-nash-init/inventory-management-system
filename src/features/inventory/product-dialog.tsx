@@ -124,7 +124,14 @@ export function ProductDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent title={editing ? "Edit product" : "New product"} description="Fields marked * are required." className="max-w-2xl">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <form
+          onSubmit={form.handleSubmit(onSubmit, (errs) => {
+            const first = Object.entries(errs)[0];
+            toast.error(first ? `${String(first[1]?.message ?? "Fix the highlighted fields")}` : "Fix the highlighted fields");
+          })}
+          className="space-y-4"
+          noValidate
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Product name" htmlFor="name" error={errors.name?.message} required className="sm:col-span-2">
               <Input id="name" {...reg("name")} />
@@ -177,7 +184,7 @@ export function ProductDialog({
                     <option key={u}>{u}</option>
                   ))}
                 </NativeSelect>
-                <Input type="number" step="any" placeholder="Qty in base unit" aria-label="Quantity of base unit in one alternate unit" {...form.register("altFactor", { valueAsNumber: true })} />
+                <Input type="number" step="any" placeholder="Qty in base unit" aria-label="Quantity of base unit in one alternate unit" {...form.register("altFactor", { setValueAs: (v) => (v === "" || v === null || v === undefined || Number.isNaN(Number(v)) ? undefined : Number(v)) })} />
               </div>
             </Field>
             <Field label="MRP" htmlFor="mrp" error={errors.mrp?.message}>

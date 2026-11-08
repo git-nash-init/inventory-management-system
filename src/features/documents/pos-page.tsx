@@ -46,7 +46,8 @@ export function PosPage() {
   const create = useRepoMutation((i: DocInput) => getRepo().docs.create(i));
   const pay = useRepoMutation((i: Parameters<ReturnType<typeof getRepo>["payments"]["record"]>[0]) => getRepo().payments.record(i));
 
-  const wh = warehouses.data?.find((w) => w.id === "wh-shop") ?? warehouses.data?.find((w) => w.isDefault) ?? warehouses.data?.[0];
+  const [whId, setWhId] = React.useState("");
+  const wh = warehouses.data?.find((w) => w.id === whId) ?? warehouses.data?.find((w) => w.isDefault) ?? warehouses.data?.[0];
   const biz = business.data;
 
   const totals = biz ? computeDocTotals(biz, { items: lines, kind: "sales", type: "invoice", tcsPct: 0 }, "intra") : undefined;
@@ -159,6 +160,10 @@ export function PosPage() {
         </Panel>
 
         <Panel className="h-fit p-4">
+          <label className="text-xs text-muted" htmlFor="pos-wh">Sell from</label>
+          <NativeSelect id="pos-wh" value={wh.id} onChange={(e) => { setWhId(e.target.value); setLines([]); }} className="mb-3 mt-1">
+            {warehouses.data?.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </NativeSelect>
           <label className="text-xs text-muted" htmlFor="pos-cust">Customer</label>
           <NativeSelect id="pos-cust" value={partyId} onChange={(e) => setPartyId(e.target.value)} className="mb-3 mt-1">
             <option value="">Walk-in customer</option>

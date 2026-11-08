@@ -22,8 +22,8 @@ export const keys = {
   audit: ["audit"] as const,
 };
 
-function useRepoQuery<T>(key: QueryKey, fn: () => Promise<T>) {
-  return useQuery({ queryKey: key, queryFn: fn, staleTime: 5_000, retry: 2 });
+function useRepoQuery<T>(key: QueryKey, fn: () => Promise<T>, enabled = true) {
+  return useQuery({ queryKey: key, queryFn: fn, staleTime: 5_000, retry: 2, enabled });
 }
 
 export const useBusiness = () => useRepoQuery(keys.business, () => getRepo().business.get());
@@ -33,7 +33,8 @@ export const useParties = () => useRepoQuery(keys.parties, () => getRepo().parti
 export const useAccounts = () => useRepoQuery(keys.accounts, () => getRepo().accounts.list());
 export const useMovements = () => useRepoQuery(keys.movements, () => getRepo().stock.movements());
 export const useDocs = (kind: DocKind) => useRepoQuery(keys.docs(kind), () => getRepo().docs.list(kind));
-export const useDoc = (id: string) => useRepoQuery(keys.doc(id), () => getRepo().docs.get(id));
+// Missing records resolve to null: TanStack Query forbids undefined query data.
+export const useDoc = (id: string) => useRepoQuery(keys.doc(id), async () => (await getRepo().docs.get(id)) ?? null, Boolean(id));
 export const usePayments = () => useRepoQuery(keys.payments, () => getRepo().payments.list());
 export const useJournal = () => useRepoQuery(keys.journal, () => getRepo().journal.list());
 export const useExpenses = () => useRepoQuery(keys.expenses, () => getRepo().expenses.list());

@@ -32,7 +32,7 @@ export function NewDoc({ route }: { route: DocRoute }) {
       key={`${type}-${sourceId}`}
       route={route}
       type={isDraft ? source.data!.type : type}
-      initial={source.data}
+      initial={source.data ?? undefined}
       defaultPartyId={params.get("party") ?? undefined}
       title={isDraft ? `Edit draft ${TYPE_LABEL[source.data!.type].toLowerCase()}` : sourceId ? `New ${TYPE_LABEL[type].toLowerCase()} from ${source.data?.number}` : undefined}
     />
