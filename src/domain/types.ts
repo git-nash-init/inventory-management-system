@@ -184,6 +184,8 @@ export type Doc = {
 export type DocInput = Omit<Doc, "id" | "number" | "totals" | "paid" | "createdAt" | "createdBy" | "supply" | "einvoice" | "status"> & {
   status?: DocStatus;
   id?: string;
+  /** For walk-in (no party) sales: the cash or bank account the money lands in. Defaults to cash. */
+  settleAccountId?: string;
 };
 
 export type PaymentMode = "cash" | "upi" | "bank" | "cheque";

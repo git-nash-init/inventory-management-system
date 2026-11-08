@@ -271,8 +271,9 @@ export function createDoc(state: State, input: DocInput, actor: string): Doc {
     state.docs = state.docs.filter((d) => d.id !== input.id);
   }
 
+  const { settleAccountId, ...docInput } = input;
   const doc: Doc = {
-    ...input,
+    ...docInput,
     id: input.id ?? uid(),
     number: draft ? "Draft" : nextNumber(state, docKey(input.kind, input.type), input.date),
     supply,
@@ -284,13 +285,13 @@ export function createDoc(state: State, input: DocInput, actor: string): Doc {
     createdBy: actor,
   };
 
-  if (!draft && affectsBooks(doc.kind, doc.type)) postDocument(state, doc);
+  if (!draft && affectsBooks(doc.kind, doc.type)) postDocument(state, doc, settleAccountId);
   state.docs.push(doc);
   logAudit(state, actor, draft ? "saved draft" : "created", `${doc.kind}:${doc.type}`, `${doc.number} for ${doc.partyName || "walk-in"} (${totals.grandTotal})`, doc.id);
   return doc;
 }
 
-function postDocument(state: State, doc: Doc) {
+function postDocument(state: State, doc: Doc, settleAccountId?: string) {
   const costs = avgCostMap(state);
   const goods = doc.items.filter((i) => !state.products.find((p) => p.id === i.productId)?.isService);
   const t = doc.totals;
@@ -317,7 +318,7 @@ function postDocument(state: State, doc: Doc) {
       }
     }
     const lines: JournalLine[] = [
-      dr(party ? SYS.debtors : SYS.cash, t.grandTotal, party),
+      dr(party ? SYS.debtors : (settleAccountId ?? SYS.cash), t.grandTotal, party),
       cr(SYS.sales, t.taxable),
       ...outTax,
       cr(SYS.tcs, t.tcs),

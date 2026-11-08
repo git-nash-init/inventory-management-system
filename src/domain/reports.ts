@@ -333,6 +333,29 @@ export function stockSummary(products: Product[], movements: StockMovement[], wa
   return rows;
 }
 
+/** Quantity on hand from a movements list. Used by forms to show availability. */
+export function qtyOn(movements: StockMovement[], productId: string, variantId?: string, warehouseId?: string): number {
+  let q = 0;
+  for (const m of movements) {
+    if (m.productId !== productId || (m.variantId ?? "") !== (variantId ?? "")) continue;
+    if (warehouseId && m.warehouseId !== warehouseId) continue;
+    q += m.qty;
+  }
+  return Math.round(q * 1000) / 1000;
+}
+
+export function batchesOn(movements: StockMovement[], productId: string, variantId: string | undefined, warehouseId: string) {
+  const map = new Map<string, { batchNo: string; expiry?: string; qty: number }>();
+  for (const m of movements) {
+    if (m.productId !== productId || (m.variantId ?? "") !== (variantId ?? "") || m.warehouseId !== warehouseId || !m.batchNo) continue;
+    const cur = map.get(m.batchNo) ?? { batchNo: m.batchNo, expiry: m.expiry, qty: 0 };
+    cur.qty += m.qty;
+    if (m.expiry) cur.expiry = m.expiry;
+    map.set(m.batchNo, cur);
+  }
+  return [...map.values()].filter((b) => b.qty > 0.0005).sort((a, b) => (a.expiry ?? "9999").localeCompare(b.expiry ?? "9999"));
+}
+
 /** FIFO value of remaining stock per product|variant key, as an alternative view to weighted average. */
 export function fifoValues(movements: StockMovement[]): Map<string, number> {
   const layers = new Map<string, { qty: number; rate: number }[]>();
