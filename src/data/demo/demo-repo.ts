@@ -7,16 +7,16 @@ import {
   createVoucher,
   logAudit,
   recordPayment,
+  saveParty,
+  saveProduct,
   setCleared,
-  savePartyOpening,
-  saveProductOpening,
   transferStock,
   uid,
   type State,
 } from "@/domain/engine";
-import { RepoError, type Repo, type WithOptionalId } from "../repo";
+import { RepoError, type Repo } from "../repo";
 import { seedState } from "./seed";
-import type { Account, Member, Party, Product, Role, Warehouse } from "@/domain/types";
+import type { Account, Member, Role, Warehouse } from "@/domain/types";
 
 const KEY = "ims-demo-v1";
 const ACTOR = "Demo Owner";
@@ -83,7 +83,7 @@ export class DemoRepo implements Repo {
     list: async () => clone(this.s().products),
     get: async (id) => clone(this.s().products.find((p) => p.id === id)),
     save: async (item) =>
-      this.tx((s) => saveProduct(s, item)),
+      this.tx((s) => saveProduct(s, item, ACTOR)),
     remove: async (id) =>
       this.tx((s) => {
         if (s.movements.some((m) => m.productId === id && m.type !== "opening") || s.docs.some((d) => d.items.some((i) => i.productId === id))) {
@@ -98,7 +98,7 @@ export class DemoRepo implements Repo {
         let n = 0;
         for (const r of rows) {
           const existing = s.products.find((p) => (r.sku && p.sku === r.sku) || (r.id && p.id === r.id));
-          saveProduct(s, existing ? { ...existing, ...r, id: existing.id, openingStock: existing.openingStock } : r);
+          saveProduct(s, existing ? { ...existing, ...r, id: existing.id, openingStock: existing.openingStock } : r, ACTOR);
           n++;
         }
         return n;
@@ -131,21 +131,7 @@ export class DemoRepo implements Repo {
   parties: Repo["parties"] = {
     list: async () => clone(this.s().parties),
     get: async (id) => clone(this.s().parties.find((p) => p.id === id)),
-    save: async (item) =>
-      this.tx((s) => {
-        if (!item.name.trim()) throw new RepoError("Enter a name.", "input", "name");
-        const p: Party = { ...item, id: item.id ?? uid() };
-        const i = s.parties.findIndex((x) => x.id === p.id);
-        if (i >= 0) {
-          p.openingBalance = s.parties[i].openingBalance; // opening is posted once
-          s.parties[i] = p;
-        } else {
-          s.parties.push(p);
-          savePartyOpening(s, p);
-        }
-        logAudit(s, ACTOR, i >= 0 ? "updated" : "created", p.type, p.name, p.id);
-        return p;
-      }),
+    save: async (item) => this.tx((s) => saveParty(s, item, ACTOR)),
     remove: async (id) =>
       this.tx((s) => {
         if (s.docs.some((d) => d.partyId === id) || s.payments.some((p) => p.partyId === id)) {
@@ -243,25 +229,4 @@ export class DemoRepo implements Repo {
   };
 
   audit: Repo["audit"] = { list: async () => clone(this.s().audit) };
-}
-
-function saveProduct(s: State, item: WithOptionalId<Product>): Product {
-  if (!item.name.trim()) throw new RepoError("Enter a product name.", "input", "name");
-  if (item.sku && s.products.some((p) => p.sku === item.sku && p.id !== item.id)) {
-    throw new RepoError(`SKU ${item.sku} is already used by another product.`, "input", "sku");
-  }
-  if (item.barcode && s.products.some((p) => p.barcode === item.barcode && p.id !== item.id)) {
-    throw new RepoError(`Barcode ${item.barcode} is already used by another product.`, "input", "barcode");
-  }
-  const p: Product = { ...item, id: item.id ?? uid() };
-  const i = s.products.findIndex((x) => x.id === p.id);
-  if (i >= 0) {
-    p.openingStock = s.products[i].openingStock;
-    s.products[i] = p;
-  } else {
-    s.products.push(p);
-    saveProductOpening(s, p);
-  }
-  logAudit(s, ACTOR, i >= 0 ? "updated" : "created", "product", p.name, p.id);
-  return p;
 }

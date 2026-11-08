@@ -78,6 +78,7 @@ function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
     async function load() {
       const { data } = await supabase.auth.getUser();
       if (cancelled) return;
+      if (data.user) await supabase.rpc("claim_invites");
       if (!data.user) {
         setState({ status: "signedOut", user: null, role: "sales" });
         return;

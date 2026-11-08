@@ -43,11 +43,11 @@ export function Topbar({ businessName, onMenu, onSearch }: { businessName: strin
         <List size={20} />
       </button>
       <CommandPaletteTrigger onOpen={onSearch} />
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
         <label className="sr-only" htmlFor="fy-select">
           Financial year
         </label>
-        <NativeSelect id="fy-select" value={fy.startYear} onChange={(e) => fy.setStartYear(Number(e.target.value))} className="h-8 w-28 text-xs">
+        <NativeSelect id="fy-select" value={fy.startYear} onChange={(e) => fy.setStartYear(Number(e.target.value))} className="h-8 w-[6.75rem] text-xs sm:w-28">
           {fy.options.map((y) => (
             <option key={y} value={y}>
               FY {fyLabel(y)}

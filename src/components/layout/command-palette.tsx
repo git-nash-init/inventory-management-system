@@ -17,12 +17,12 @@ export function CommandPaletteTrigger({ onOpen }: { onOpen: () => void }) {
   return (
     <button
       onClick={onOpen}
-      className="flex h-9 w-full max-w-sm items-center gap-2 rounded border border-line bg-surface px-3 text-sm text-muted hover:bg-surface-2"
+      className="flex h-9 w-full min-w-0 max-w-sm flex-1 items-center gap-2 rounded border border-line bg-surface px-3 text-sm text-muted hover:bg-surface-2"
       aria-label="Search products, customers, invoices and pages"
     >
       <MagnifyingGlass size={16} />
-      <span className="flex-1 text-left">Search</span>
-      <kbd className="num rounded border border-line px-1.5 text-xs">Ctrl K</kbd>
+      <span className="flex-1 truncate text-left">Search</span>
+      <kbd className="num hidden whitespace-nowrap rounded border border-line px-1.5 text-xs md:inline">Ctrl K</kbd>
     </button>
   );
 }

@@ -1,7 +1,7 @@
 import { calcInvoice } from "@/lib/gst/calc";
 import { formatDocNumber, fyStartYear, toISODate } from "@/lib/format/date";
 import { round2, toPaise, fromPaise } from "@/lib/format/money";
-import { RepoError } from "@/data/repo";
+import { RepoError, type WithOptionalId } from "@/data/repo";
 import { SYS, EXPENSE_CATEGORIES } from "./accounts";
 import type {
   Account,
@@ -671,6 +671,44 @@ export function setCleared(state: State, entryId: string, accountId: string, dat
   if (date) next[accountId] = date;
   else delete next[accountId];
   e.cleared = next;
+}
+
+// ---------- master data saves shared by every adapter ----------
+
+export function saveProduct(s: State, item: WithOptionalId<Product>, actor: string): Product {
+  if (!item.name.trim()) throw new RepoError("Enter a product name.", "input", "name");
+  if (item.sku && s.products.some((p) => p.sku === item.sku && p.id !== item.id)) {
+    throw new RepoError(`SKU ${item.sku} is already used by another product.`, "input", "sku");
+  }
+  if (item.barcode && s.products.some((p) => p.barcode === item.barcode && p.id !== item.id)) {
+    throw new RepoError(`Barcode ${item.barcode} is already used by another product.`, "input", "barcode");
+  }
+  const p: Product = { ...item, id: item.id ?? uid() };
+  const i = s.products.findIndex((x) => x.id === p.id);
+  if (i >= 0) {
+    p.openingStock = s.products[i].openingStock;
+    s.products[i] = p;
+  } else {
+    s.products.push(p);
+    saveProductOpening(s, p);
+  }
+  logAudit(s, actor, i >= 0 ? "updated" : "created", "product", p.name, p.id);
+  return p;
+}
+
+export function saveParty(s: State, item: WithOptionalId<Party>, actor: string): Party {
+  if (!item.name.trim()) throw new RepoError("Enter a name.", "input", "name");
+  const p: Party = { ...item, id: item.id ?? uid() };
+  const i = s.parties.findIndex((x) => x.id === p.id);
+  if (i >= 0) {
+    p.openingBalance = s.parties[i].openingBalance; // opening is posted once
+    s.parties[i] = p;
+  } else {
+    s.parties.push(p);
+    savePartyOpening(s, p);
+  }
+  logAudit(s, actor, i >= 0 ? "updated" : "created", p.type, p.name, p.id);
+  return p;
 }
 
 export function expenseCategoryAccount(label: string): string {
