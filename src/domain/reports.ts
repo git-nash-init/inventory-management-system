@@ -333,6 +333,28 @@ export function stockSummary(products: Product[], movements: StockMovement[], wa
   return rows;
 }
 
+/** FIFO value of remaining stock per product|variant key, as an alternative view to weighted average. */
+export function fifoValues(movements: StockMovement[]): Map<string, number> {
+  const layers = new Map<string, { qty: number; rate: number }[]>();
+  for (const m of movements) {
+    if (m.type === "transfer_in" || m.type === "transfer_out") continue;
+    const k = `${m.productId}|${m.variantId ?? ""}`;
+    const q = layers.get(k) ?? [];
+    if (m.qty > 0) q.push({ qty: m.qty, rate: m.rate });
+    else {
+      let need = -m.qty;
+      while (need > 1e-9 && q.length) {
+        const take = Math.min(need, q[0].qty);
+        q[0].qty -= take;
+        need -= take;
+        if (q[0].qty <= 1e-9) q.shift();
+      }
+    }
+    layers.set(k, q);
+  }
+  return new Map([...layers].map(([k, q]) => [k, round2(q.reduce((s, l) => s + l.qty * l.rate, 0))]));
+}
+
 export function expiringBatches(movements: StockMovement[], products: Product[], withinDays: number, asOf: string) {
   const map = new Map<string, { productId: string; variantId?: string; warehouseId: string; batchNo: string; expiry: string; qty: number }>();
   for (const m of movements) {
