@@ -2,6 +2,8 @@
 
 Inventory, sales, purchases, GST invoices and accounting for Indian businesses. Next.js 16, TypeScript, Tailwind v4, Supabase.
 
+![Khata Books screenshot](docs/screenshots/inventory-management-system.png)
+
 Two data modes, switched by one environment variable:
 
 - **demo** (default): the whole app runs on realistic sample data held in your browser. No account or backend needed.
