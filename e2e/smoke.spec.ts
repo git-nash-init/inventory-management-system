@@ -72,6 +72,78 @@ test("language button switches between Hinglish and English and is remembered", 
   await expect(page.locator("html")).toHaveAttribute("lang", "hi-Latn");
 });
 
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dash = " – ";
+const one = (d: Date) => `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`;
+const shift = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+
+test("Home period buttons show the exact dates", async ({ page }) => {
+  const errors = watch(page);
+  await page.addInitScript(() => localStorage.setItem("shop:lang", "en"));
+  await page.goto("/dashboard");
+  const shown = page.locator("p[aria-live=polite]");
+  const buttons = page.getByRole("group", { name: "Choose the dates to show" });
+  const pick = (name: string) => buttons.getByRole("button", { name, exact: true });
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const monday = shift(today, -((today.getDay() + 6) % 7));
+  const sunday = shift(monday, 6);
+  const lastOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  // Opens on This month.
+  await expect(pick("This month")).toHaveAttribute("aria-pressed", "true");
+  await expect(shown).toContainText(`1${dash}${lastOfMonth.getDate()} ${MON[today.getMonth()]} ${today.getFullYear()}`);
+
+  await pick("Today").click();
+  await expect(pick("Today")).toHaveAttribute("aria-pressed", "true");
+  await expect(pick("This month")).toHaveAttribute("aria-pressed", "false");
+  await expect(shown).toContainText(one(today));
+
+  await pick("Yesterday").click();
+  await expect(shown).toContainText(one(shift(today, -1)));
+
+  await pick("This week").click();
+  const sameMonth = monday.getMonth() === sunday.getMonth();
+  const weekText = sameMonth
+    ? `${monday.getDate()}${dash}${one(sunday)}`
+    : monday.getFullYear() === sunday.getFullYear()
+      ? `${monday.getDate()} ${MON[monday.getMonth()]}${dash}${one(sunday)}`
+      : `${one(monday)}${dash}${one(sunday)}`;
+  await expect(shown).toContainText(weekText);
+
+  await pick("This year").click();
+  await expect(shown).toContainText(`1 Jan${dash}31 Dec ${today.getFullYear()}`);
+
+  // Custom dates: wrong input is explained, right input is shown exactly.
+  await pick("Custom dates").click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("From").fill("2026-11-09");
+  await dialog.getByLabel("To").fill("2026-11-03");
+  await dialog.getByRole("button", { name: "Show" }).click();
+  await expect(dialog.getByText(/must be the same as or after/)).toBeVisible();
+  await dialog.getByLabel("To").fill("");
+  await dialog.getByRole("button", { name: "Show" }).click();
+  await expect(dialog.getByText("Choose both dates.")).toBeVisible();
+  await dialog.getByLabel("To").fill("2026-11-09");
+  await dialog.getByLabel("From").fill("2026-11-03");
+  await dialog.getByRole("button", { name: "Show" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(pick("Custom dates")).toHaveAttribute("aria-pressed", "true");
+  await expect(shown).toContainText(`3${dash}9 Nov 2026`);
+
+  // Cancelling leaves the chosen dates alone, and the dialog starts from the dates being shown.
+  await pick("Custom dates").click();
+  await expect(page.getByRole("dialog").getByLabel("From")).toHaveValue("2026-11-03");
+  await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+  await expect(shown).toContainText(`3${dash}9 Nov 2026`);
+
+  // The figures always load for whatever is chosen.
+  await expect(page.getByText("Sold", { exact: true })).toBeVisible();
+  await expect(page.getByText("Profit", { exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("phone-size screen has no sideways scrolling", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 700 });
   for (const path of PAGES) {
@@ -132,7 +204,11 @@ test("add product, add stock, make a bill, stock drops, home shows it", async ({
   await page.goto("/stock");
   await expect(page.getByRole("listitem").filter({ hasText: name })).toContainText("70 kg");
   await page.goto("/dashboard");
+  await page.getByRole("group", { name: "Choose the dates to show" }).getByRole("button", { name: "Today", exact: true }).click();
   await expect(page.getByText(name)).toBeVisible();
+  await page.getByRole("group", { name: "Choose the dates to show" }).getByRole("button", { name: "Yesterday", exact: true }).click();
+  await expect(page.getByText("Nothing sold in these dates.")).toBeVisible();
+  await expect(page.getByText(name)).toHaveCount(0);
 
   expect(errors).toEqual([]);
 });

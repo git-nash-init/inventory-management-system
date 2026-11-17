@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amountInWords, formatAmount, formatDate, formatINR, formatMonth, round2 } from "./index";
+import { amountInWords, formatAmount, formatDate, formatINR, round2 } from "./index";
 
 describe("INR formatting", () => {
   it("groups in the Indian system", () => {
@@ -33,8 +33,5 @@ describe("dates", () => {
   it("reads a database date without shifting the day", () => {
     expect(formatDate("2026-11-01")).toBe("01-11-2026");
     expect(formatDate("2026-12-31")).toBe("31-12-2026");
-  });
-  it("names the month", () => {
-    expect(formatMonth("2026-11-01")).toBe("November 2026");
   });
 });

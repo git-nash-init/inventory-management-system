@@ -38,9 +38,3 @@ export function isValidMobile(text: string): boolean {
   const digits = text.replace(/\D/g, "");
   return digits.length >= 10 && digits.length <= 13;
 }
-
-/** First day of the month, `offset` months from today, as YYYY-MM-01. */
-export function monthStart(offset: number, today = new Date()): string {
-  const d = new Date(today.getFullYear(), today.getMonth() + offset, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-}

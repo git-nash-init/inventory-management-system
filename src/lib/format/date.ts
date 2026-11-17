@@ -18,8 +18,3 @@ export function formatDate(input: Date | string): string {
 export function toISODate(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
-
-/** "2026-11-01" -> "November 2026" */
-export function formatMonth(isoFirstOfMonth: string): string {
-  return parse(isoFirstOfMonth).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
-}

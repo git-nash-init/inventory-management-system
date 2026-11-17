@@ -257,6 +257,7 @@ export type Database = {
         Returns: string;
       };
       dashboard_month: { Args: { p_month: string }; Returns: Json };
+      dashboard_range: { Args: { p_from: string; p_to: string }; Returns: Json };
     };
     Enums: {
       [_ in never]: never;

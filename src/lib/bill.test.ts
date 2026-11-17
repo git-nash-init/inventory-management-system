@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { billNumber, calcBill, isValidMobile, monthStart, parseNumber } from "./bill";
+import { billNumber, calcBill, isValidMobile, parseNumber } from "./bill";
 
 describe("calcBill", () => {
   it("adds no GST when no percent is given", () => {
@@ -48,11 +48,5 @@ describe("helpers", () => {
     expect(isValidMobile("98765 43210")).toBe(true);
     expect(isValidMobile("+91 98765 43210")).toBe(true);
     expect(isValidMobile("12345")).toBe(false);
-  });
-  it("finds the first day of a month", () => {
-    const today = new Date(2026, 10, 17);
-    expect(monthStart(0, today)).toBe("2026-11-01");
-    expect(monthStart(-1, today)).toBe("2026-10-01");
-    expect(monthStart(-11, today)).toBe("2025-12-01");
   });
 });

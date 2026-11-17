@@ -15,7 +15,7 @@ export const qk = {
   shop: ["shop"] as const,
   bills: ["bills"] as const,
   bill: (id: string) => ["bill", id] as const,
-  dashboard: (month: string) => ["dashboard", month] as const,
+  dashboard: (from: string, to: string) => ["dashboard", from, to] as const,
 };
 
 const num = (v: unknown): number => {
@@ -135,12 +135,14 @@ export function useBill(id: string) {
   });
 }
 
-/** `month` is the first day of the month, like 2026-11-01. */
-export function useDashboard(month: string) {
+/** Figures for the dates shown on Home (both dates included). Waits until `range` is known. */
+export function useDashboard(range: { from: string; to: string } | null) {
   return useQuery({
-    queryKey: qk.dashboard(month),
+    queryKey: range ? qk.dashboard(range.from, range.to) : ["dashboard", "waiting"],
+    enabled: range !== null,
     queryFn: async (): Promise<Dashboard> => {
-      const { data, error } = await getSupabase().rpc("dashboard_month", { p_month: month });
+      if (!range) throw new Error("No dates chosen");
+      const { data, error } = await getSupabase().rpc("dashboard_range", { p_from: range.from, p_to: range.to });
       if (error) throw error;
       return toDashboard(data);
     },

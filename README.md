@@ -2,7 +2,7 @@
 
 A very simple stock and billing app for a small shop. There is **no login**: opening the site shows the data straight away.
 
-- **Home**: this month's sold, bought and profit, what was sold, stock left, low stock, latest bills.
+- **Home**: sold, bought and profit for the dates you pick, what was sold, stock left, low stock, latest bills. Buttons next to the title choose the dates: Today, Yesterday, This week (Monday to Sunday), This month (the default), This year, or Custom dates. The exact dates being shown, for example `1 – 30 Nov 2026`, are written on the right. Stock left is always what is in the shop right now.
 - **Stock**: add products, add stock when new goods come in, fix a quantity.
 - **Make bill**: customer name and mobile, items, optional GST % for the whole bill. Selling more than is in stock is refused.
 - **All bills / one bill**: print the bill (shop name, address, phone on top, bank details at the bottom). A bill can be cancelled, which puts the stock back.
@@ -17,7 +17,7 @@ A very simple stock and billing app for a small shop. There is **no login**: ope
 
 ## Setup
 
-1. Create a Supabase project and run `supabase/migrations/20261117000001_simple_shop.sql` in its SQL editor (it creates 5 tables, a stock view and 4 functions).
+1. Create a Supabase project and run the files in `supabase/migrations` in order in its SQL editor (5 tables, a stock view and the functions the app calls).
 2. Copy `.env.example` to `.env.local` and fill in the project URL and the publishable (anon) key.
 3. `npm install`, then `npm run dev`.
 
@@ -26,7 +26,8 @@ npm run typecheck   # TypeScript
 npm run lint
 npm test            # unit tests
 npm run build
-E2E_ALLOW_WRITES=1 npm run test:e2e   # browser tests (needs the dev server running; writes test data)
+npm run test:e2e                      # browser tests (needs the dev server running; read-only)
+E2E_ALLOW_WRITES=1 npm run test:e2e   # also runs the add product / bill flow. It WRITES to the database, so use a test project, not real shop data
 ```
 
 ## Security: please read

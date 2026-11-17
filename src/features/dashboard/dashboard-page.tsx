@@ -2,25 +2,38 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Money } from "@/components/ui/amount";
-import { PageHeader, Panel, PanelHeader } from "@/components/ui/surface";
+import { Panel, PanelHeader } from "@/components/ui/surface";
 import { LoadError } from "@/components/states/load-error";
 import { StatSkeleton, TableSkeleton } from "@/components/states/skeletons";
 import { useBills, useDashboard, useProducts } from "@/data/queries";
-import { billNumber, monthStart } from "@/lib/bill";
-import { formatDate, formatMonth } from "@/lib/format/date";
+import { billNumber } from "@/lib/bill";
+import { formatDate } from "@/lib/format/date";
 import { formatINR, formatQty } from "@/lib/format/money";
 import { useI18n } from "@/lib/i18n";
+import { isoDay, parseDay, rangeFor, type DateRange, type Preset } from "@/lib/range";
 import { cn } from "@/lib/utils";
+import { CustomRangeDialog, PeriodButtons, RangeLabel } from "./period-filter";
+
+/** Today's date as text. Null on the server, so the page never shows a date that is wrong for the visitor. */
+function subscribeToDayChange(onChange: () => void) {
+  const id = window.setInterval(onChange, 60_000); // notices midnight while the page stays open
+  return () => window.clearInterval(id);
+}
+function useToday(): Date | null {
+  const iso = React.useSyncExternalStore(subscribeToDayChange, () => isoDay(new Date()), () => null);
+  return React.useMemo(() => {
+    const day = iso ? parseDay(iso) : null;
+    return day ? new Date(day.y, day.m - 1, day.d) : null;
+  }, [iso]);
+}
 
 function Stat({ label, help, value, note, tone }: { label: string; help: string; value: number; note?: string; tone?: "good" | "bad" }) {
   return (
-    <Panel className="p-4">
+    <Panel className="min-w-0 p-3 sm:p-4">
       <div className="text-sm font-medium">{label}</div>
-      <Money value={value} className={cn("mt-1 block text-2xl font-semibold", tone === "good" && "text-ok", tone === "bad" && "text-bad")} />
+      <Money value={value} className={cn("mt-1 block text-lg font-semibold sm:text-2xl", tone === "good" && "text-ok", tone === "bad" && "text-bad")} />
       <p className="mt-2 text-xs text-muted">{help}</p>
       {note ? <p className="mt-1 text-xs text-muted">{note}</p> : null}
     </Panel>
@@ -29,9 +42,12 @@ function Stat({ label, help, value, note, tone }: { label: string; help: string;
 
 export function DashboardPage() {
   const { t, unit } = useI18n();
-  const [offset, setOffset] = React.useState(0);
-  const month = React.useMemo(() => monthStart(offset), [offset]);
-  const dash = useDashboard(month);
+  const today = useToday();
+  const [preset, setPreset] = React.useState<Preset>("month");
+  const [custom, setCustom] = React.useState<DateRange | undefined>();
+  const [customOpen, setCustomOpen] = React.useState(false);
+  const range = React.useMemo(() => (today ? rangeFor(preset, today, custom) : null), [today, preset, custom]);
+  const dash = useDashboard(range);
   const products = useProducts();
   const bills = useBills(5);
 
@@ -40,21 +56,25 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title={t("dash.title")}
-        actions={
-          <div className="flex items-center gap-1">
-            <Button size="icon" className="h-11 w-11" aria-label={t("dash.monthPrev")} title={t("dash.monthPrev")} onClick={() => setOffset((o) => o - 1)}>
-              <CaretLeft size={18} />
-            </Button>
-            <span className="min-w-36 text-center text-base font-medium" suppressHydrationWarning>
-              {formatMonth(month)}
-            </span>
-            <Button size="icon" className="h-11 w-11" aria-label={t("dash.monthNext")} title={t("dash.monthNext")} disabled={offset >= 0} onClick={() => setOffset((o) => o + 1)}>
-              <CaretRight size={18} />
-            </Button>
-          </div>
-        }
+      {/* Title, then the period buttons, then the exact dates. On a phone the buttons drop to their own row. */}
+      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-3">
+        <h1 className="order-1 text-xl font-semibold">{t("dash.title")}</h1>
+        <PeriodButtons
+          className="order-3 w-full lg:order-2 lg:w-auto"
+          preset={preset}
+          onPick={setPreset}
+          onCustom={() => setCustomOpen(true)}
+        />
+        <RangeLabel range={range} className="order-2 ml-auto lg:order-3" />
+      </div>
+      <CustomRangeDialog
+        open={customOpen}
+        onOpenChange={setCustomOpen}
+        initial={range}
+        onApply={(r) => {
+          setCustom(r);
+          setPreset("custom");
+        }}
       />
 
       {brandNew ? <GettingStarted /> : null}
@@ -65,7 +85,7 @@ export function DashboardPage() {
         <LoadError error={dash.error} onRetry={() => void dash.refetch()} />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
             <Stat label={t("dash.sold")} help={t("dash.soldHelp")} value={dash.data.sold} note={[t("dash.bills", { n: dash.data.bills }), dash.data.gstCollected > 0 ? t("dash.gstNote", { amount: formatINR(dash.data.gstCollected) }) : ""].filter(Boolean).join(" · ")} />
             <Stat label={t("dash.bought")} help={t("dash.boughtHelp")} value={dash.data.bought} />
             <Stat label={t("dash.profit")} help={t("dash.profitHelp")} value={dash.data.profit} tone={dash.data.profit > 0 ? "good" : dash.data.profit < 0 ? "bad" : undefined} />
@@ -119,7 +139,7 @@ export function DashboardPage() {
                 <PanelHeader
                   title={t("dash.recentBills")}
                   action={
-                    <Link href="/bills" className="link text-sm">
+                    <Link href="/bills" className="link -my-2 inline-flex min-h-10 items-center px-1 text-sm">
                       {t("common.seeAll")}
                     </Link>
                   }
