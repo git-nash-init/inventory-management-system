@@ -1,196 +1,61 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Field, Input, NativeSelect } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/surface";
-import { OfflineBanner } from "@/components/states/offline-banner";
-import { NetworkActivity } from "@/components/states/network-activity";
-import { SessionExpiredDialog } from "@/components/states/session-expired";
-import { AccessDenied } from "@/components/states/permission-denied";
-import { PageSkeleton } from "@/components/states/skeletons";
-import { useAuth } from "@/lib/auth/context";
-import { createBusinessAction } from "@/lib/auth/actions";
-import { useBusiness } from "@/data/hooks";
-import { moduleForPath, rolesFor, ROLE_LABEL } from "@/domain/permissions";
-import { STATES } from "@/lib/gst/states";
-import { Sidebar } from "./sidebar";
-import { Topbar } from "./topbar";
-import { CommandPalette } from "./command-palette";
+import { House, List, Package, Plus, Storefront } from "@phosphor-icons/react";
+import { useI18n, type Key } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { Topbar } from "./topbar";
 
-const COLLAPSE_KEY = "ims:sidebar-collapsed";
-
-function useCollapsed() {
-  const subscribe = React.useCallback((cb: () => void) => {
-    window.addEventListener("ims:sidebar", cb);
-    return () => window.removeEventListener("ims:sidebar", cb);
-  }, []);
-  const collapsed = React.useSyncExternalStore(
-    subscribe,
-    () => {
-      try {
-        return localStorage.getItem(COLLAPSE_KEY) === "1";
-      } catch {
-        return false;
-      }
-    },
-    () => false,
-  );
-  const toggle = () => {
-    try {
-      localStorage.setItem(COLLAPSE_KEY, collapsed ? "0" : "1");
-    } catch {
-      /* storage blocked */
-    }
-    window.dispatchEvent(new Event("ims:sidebar"));
-  };
-  return { collapsed, toggle };
-}
-
-function CreateBusiness({ onDone }: { onDone: () => void }) {
-  const [name, setName] = React.useState("");
-  const [state, setState] = React.useState("27");
-  const [error, setError] = React.useState<string>();
-  const [busy, setBusy] = React.useState(false);
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const res = await createBusinessAction({ name, stateCode: state });
-    setBusy(false);
-    if (res.ok) onDone();
-    else setError(res.fields?.name ?? res.message);
-  }
-  return (
-    <div className="mx-auto mt-24 max-w-md rounded border border-line bg-surface p-6">
-      <h1 className="text-lg font-semibold">Set up your business</h1>
-      <p className="mt-1 text-sm text-muted">Your account is ready. Create the business these books belong to. You can add GSTIN and address next.</p>
-      <form onSubmit={submit} className="mt-4 space-y-3">
-        <Field label="Business name" htmlFor="biz-name" error={error} required>
-          <Input id="biz-name" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={Boolean(error)} />
-        </Field>
-        <Field label="State" htmlFor="biz-state" hint="Decides CGST and SGST versus IGST on your invoices.">
-          <NativeSelect id="biz-state" value={state} onChange={(e) => setState(e.target.value)}>
-            {STATES.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.code} {s.name}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Button type="submit" variant="primary" disabled={busy} className="w-full">
-          {busy ? "Creating" : "Create business"}
-        </Button>
-      </form>
-    </div>
-  );
-}
+const NAV: { href: string; label: Key; icon: React.ComponentType<{ size?: number }>; match: (p: string) => boolean; primary?: boolean }[] = [
+  { href: "/dashboard", label: "nav.home", icon: House, match: (p) => p.startsWith("/dashboard") },
+  { href: "/stock", label: "nav.stock", icon: Package, match: (p) => p.startsWith("/stock") },
+  { href: "/bills/new", label: "nav.newBill", icon: Plus, match: (p) => p === "/bills/new", primary: true },
+  { href: "/bills", label: "nav.bills", icon: List, match: (p) => p === "/bills" || (p.startsWith("/bills/") && p !== "/bills/new") },
+  { href: "/settings", label: "nav.shop", icon: Storefront, match: (p) => p.startsWith("/settings") },
+];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { status, user, role, demo, can, refresh } = useAuth();
+  const { t } = useI18n();
   const pathname = usePathname();
-  const business = useBusiness();
-  const { collapsed, toggle } = useCollapsed();
-  const [drawer, setDrawer] = React.useState(false);
-  const [search, setSearch] = React.useState(false);
-
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setSearch((s) => !s);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  React.useEffect(() => {
-    // Close the mobile drawer after navigation.
-    const id = requestAnimationFrame(() => setDrawer(false));
-    return () => cancelAnimationFrame(id);
-  }, [pathname]);
-
-  if (status === "signedOut") {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="max-w-md text-center">
-          <h1 className="text-lg font-semibold">Could not open your data</h1>
-          <p className="mt-2 text-sm text-muted">The app could not connect to its database account. Reload the page. If this keeps happening, check that AUTO_LOGIN_EMAIL and AUTO_LOGIN_PASSWORD are set on the server.</p>
-          <Button variant="primary" className="mt-4" onClick={() => window.location.reload()}>Reload</Button>
-        </div>
-      </div>
-    );
-  }
-  if (status === "loading") {
-    return (
-      <div className="flex min-h-screen" aria-busy="true">
-        <div className="hidden w-60 border-r border-line bg-surface p-3 md:block">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="mt-6 h-8 w-full" />
-          <Skeleton className="mt-2 h-8 w-full" />
-          <Skeleton className="mt-2 h-8 w-full" />
-        </div>
-        <div className="flex-1 p-6">
-          <PageSkeleton />
-        </div>
-      </div>
-    );
-  }
-  if (status === "noBusiness") return <CreateBusiness onDone={refresh} />;
-
-  const businessName = business.data?.name ?? "Your business";
-  const mod = moduleForPath(pathname);
-  const allowed = !mod || can(mod, "view");
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-accent focus:px-3 focus:py-2 focus:text-accent-ink">
         Skip to content
       </a>
-      <aside className={cn("no-print sticky top-0 hidden h-screen shrink-0 md:block", collapsed ? "w-14" : "w-60")}>
-        <Sidebar collapsed={collapsed} onToggle={toggle} businessName={businessName} />
-      </aside>
-      <Dialog open={drawer} onOpenChange={setDrawer}>
-        <DialogContent title="Menu" className="left-0 top-0 h-full max-h-none w-72 max-w-[85vw] translate-x-0 translate-y-0 p-0">
-          <div className="h-[calc(100vh-4rem)]">
-            <Sidebar collapsed={false} businessName={businessName} onNavigate={() => setDrawer(false)} />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <NetworkActivity />
-        <OfflineBanner />
-        <Topbar businessName={businessName} onMenu={() => setDrawer(true)} onSearch={() => setSearch(true)} />
-        {demo ? (
-          <div className="no-print border-b border-line bg-surface-2 px-4 py-1.5 text-xs text-muted">
-            Demo data is stored in this browser only. Connect Supabase to use real data.
-          </div>
-        ) : null}
-        <main id="main" className="min-w-0 flex-1 p-4 md:p-6">
-          {allowed ? (
-            children
-          ) : (
-            <AccessDenied
-              yourRole={ROLE_LABEL[role]}
-              needed={rolesFor(mod!, "view").map((r) => ROLE_LABEL[r])}
-              ownerHint={user?.email ? "your business owner" : "the owner"}
-            />
-          )}
-        </main>
-      </div>
-      <CommandPalette open={search} onOpenChange={setSearch} />
-      <SessionExpiredDialog
-        onReconnect={async () => {
-          if (demo) return true;
-          // Any page request lets the server open a fresh session (see src/proxy.ts).
-          const res = await fetch("/dashboard", { cache: "no-store", credentials: "same-origin" });
-          return res.ok;
-        }}
-      />
+      <Topbar />
+      <nav aria-label={t("nav.menu")} className="no-print border-b border-line bg-surface">
+        <ul className="mx-auto flex max-w-5xl flex-wrap gap-1 px-2 py-1.5 md:px-6">
+          {NAV.map((item) => {
+            const active = item.match(pathname);
+            const Icon = item.icon;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex h-10 items-center gap-2 rounded border px-3 text-sm font-medium whitespace-nowrap",
+                    item.primary
+                      ? "border-accent bg-accent text-accent-ink hover:bg-ink hover:border-ink"
+                      : active
+                        ? "border-line bg-surface-2 text-ink"
+                        : "border-transparent text-muted hover:bg-surface-2 hover:text-ink",
+                  )}
+                >
+                  <Icon size={18} />
+                  {t(item.label)}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <main id="main" className="mx-auto w-full max-w-5xl min-w-0 flex-1 p-4 md:p-6">
+        {children}
+      </main>
     </div>
   );
 }

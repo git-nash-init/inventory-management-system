@@ -18,8 +18,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Khata Books", template: "%s | Khata Books" },
-  description: "Inventory, sales, purchases, GST invoices and accounts for Indian businesses.",
+  title: { default: "Shop Manager", template: "%s | Shop Manager" },
+  description: "Simple stock and bills for a small shop.",
 };
 
 export const viewport: Viewport = {
@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${plexSans.variable} ${plexMono.variable}`} suppressHydrationWarning>
+    <html lang="hi-Latn" className={`${plexSans.variable} ${plexMono.variable}`} suppressHydrationWarning>
       <body className="min-h-screen">
         <AppProviders>{children}</AppProviders>
       </body>

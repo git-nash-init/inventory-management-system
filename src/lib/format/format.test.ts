@@ -1,15 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  amountInWords,
-  formatAmount,
-  formatDate,
-  formatDocNumber,
-  formatINR,
-  fyLabel,
-  fyLabelShort,
-  fyStartYear,
-  round2,
-} from "./index";
+import { amountInWords, formatAmount, formatDate, formatINR, formatMonth, round2 } from "./index";
 
 describe("INR formatting", () => {
   it("groups in the Indian system", () => {
@@ -36,18 +26,15 @@ describe("amount in words", () => {
   });
 });
 
-describe("dates and financial year", () => {
-  it("formats DD-MM-YYYY", () => {
+describe("dates", () => {
+  it("formats DD-MM-YYYY from a Date", () => {
     expect(formatDate(new Date(2025, 10, 8))).toBe("08-11-2025");
   });
-  it("rolls the FY over on 1 April", () => {
-    expect(fyStartYear(new Date(2026, 2, 31))).toBe(2025);
-    expect(fyStartYear(new Date(2026, 3, 1))).toBe(2026);
-    expect(fyStartYear(new Date(2025, 10, 8))).toBe(2025);
+  it("reads a database date without shifting the day", () => {
+    expect(formatDate("2026-11-01")).toBe("01-11-2026");
+    expect(formatDate("2026-12-31")).toBe("31-12-2026");
   });
-  it("labels and numbers documents per FY", () => {
-    expect(fyLabelShort(2025)).toBe("25-26");
-    expect(fyLabel(2025)).toBe("2025-26");
-    expect(formatDocNumber("INV", 2025, 42)).toBe("INV/25-26/0042");
+  it("names the month", () => {
+    expect(formatMonth("2026-11-01")).toBe("November 2026");
   });
 });

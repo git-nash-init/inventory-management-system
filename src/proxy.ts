@@ -1,13 +1,6 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { DATA_MODE, SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
+import { SUPABASE_URL } from "@/lib/env";
 import { clientIp, rateLimit } from "@/lib/security/rate-limit";
-
-// There is no login page. The server signs in to the shared account below on a visitor's first request
-// and stores the session in cookies, so Row Level Security still applies to every query.
-// Set both in the host's environment variables (server only, never NEXT_PUBLIC_).
-const AUTO_LOGIN_EMAIL = process.env.AUTO_LOGIN_EMAIL ?? "";
-const AUTO_LOGIN_PASSWORD = process.env.AUTO_LOGIN_PASSWORD ?? "";
 
 function buildCsp(nonce: string) {
   const dev = process.env.NODE_ENV === "development";
@@ -59,28 +52,7 @@ export async function proxy(request: NextRequest) {
   request.headers.set("x-nonce", nonce);
   request.headers.set("Content-Security-Policy", csp);
 
-  let response = NextResponse.next({ request });
-
-  if (DATA_MODE === "supabase") {
-    const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll(list) {
-          for (const { name, value } of list) request.cookies.set(name, value);
-          response = NextResponse.next({ request });
-          for (const { name, value, options } of list) response.cookies.set(name, value, options);
-        },
-      },
-    });
-    // Must run before any response is built so a refreshed token can be written to cookies.
-    const { data } = await supabase.auth.getClaims();
-    if (!data?.claims && AUTO_LOGIN_EMAIL && AUTO_LOGIN_PASSWORD) {
-      const { error } = await supabase.auth.signInWithPassword({ email: AUTO_LOGIN_EMAIL, password: AUTO_LOGIN_PASSWORD });
-      if (error) console.error("[auto-login] sign in failed:", error.code ?? error.message);
-    }
-    response.headers.set("Cache-Control", "private, no-store");
-  }
-
+  const response = NextResponse.next({ request });
   response.headers.set("Content-Security-Policy", csp);
   return response;
 }
