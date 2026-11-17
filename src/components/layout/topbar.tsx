@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Buildings, List, Moon, SignOut, Sun, UserCircle } from "@phosphor-icons/react";
+import { Buildings, List, Moon, Sun, UserCircle } from "@phosphor-icons/react";
 import { NativeSelect } from "@/components/ui/input";
 import {
   DropdownContent,
@@ -20,22 +20,10 @@ import { fyLabel } from "@/lib/format/date";
 import { CommandPaletteTrigger } from "./command-palette";
 
 export function Topbar({ businessName, onMenu, onSearch }: { businessName: string; onMenu: () => void; onSearch: () => void }) {
-  const { user, role, demo, signOut, switchDemoRole } = useAuth();
+  const { user, role, demo, switchDemoRole } = useAuth();
   const fy = useFy();
   const { theme, setTheme } = useTheme();
   const qc = useQueryClient();
-
-  async function handleSignOut() {
-    // Do not leave business data cached on a shared machine.
-    qc.clear();
-    try {
-      localStorage.removeItem("ims-query");
-      localStorage.removeItem("ims-query-demo");
-    } catch {
-      /* storage blocked */
-    }
-    await signOut();
-  }
 
   return (
     <header className="no-print flex h-14 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
@@ -99,10 +87,6 @@ export function Topbar({ businessName, onMenu, onSearch }: { businessName: strin
                 ))}
               </>
             ) : null}
-            <DropdownSeparator />
-            <DropdownItem onSelect={() => void handleSignOut()}>
-              <SignOut size={16} /> Sign out
-            </DropdownItem>
           </DropdownContent>
         </DropdownMenu>
       </div>

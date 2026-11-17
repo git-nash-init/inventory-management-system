@@ -9,10 +9,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </Link>
         <nav aria-label="Account" className="flex items-center gap-4 text-sm">
           <Link href="/help" className="text-muted hover:text-ink">Help</Link>
-          <Link href="/login" className="text-muted hover:text-ink">Sign in</Link>
-          <Link href="/signup" className="inline-flex h-8 items-center rounded border border-accent bg-accent px-3 text-accent-ink hover:bg-ink hover:border-ink">
-            Create account
-          </Link>
+          <Link href="/dashboard" className="inline-flex h-8 items-center rounded border border-accent bg-accent px-3 text-accent-ink hover:bg-ink hover:border-ink">Open app</Link>
         </nav>
       </header>
       <main className="flex-1">{children}</main>

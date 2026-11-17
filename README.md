@@ -16,7 +16,7 @@ npm install
 npm run dev          # http://localhost:3000, opens in demo mode
 ```
 
-Click "Open the demo business" on the sign in page.
+Open the site. There is no sign in page.
 
 ## Connect Supabase
 
@@ -30,7 +30,7 @@ Click "Open the demo business" on the sign in page.
    ```
 3. In Supabase Auth settings: set the minimum password length to 10 and require letters and digits, enable email confirmation, and turn on TOTP multi-factor authentication.
 4. Regenerate types: `npx supabase gen types typescript --project-id <id> > src/lib/supabase/database.types.ts`.
-5. Sign up in the app. The first user becomes the owner of their business.
+5. Create one account in Supabase Auth (Dashboard > Authentication > Users) that is an owner of your business, and set `AUTO_LOGIN_EMAIL` and `AUTO_LOGIN_PASSWORD` on the server to its credentials.
 
 ## How it fits together
 
@@ -67,7 +67,7 @@ npm run test:e2e     # needs the app running, uses installed Chrome
 | Rate limiting | `src/proxy.ts` limits auth and mutation routes per IP. In-memory: use a shared store (Upstash, Vercel KV) when running several instances. Supabase Auth adds its own limits. |
 | JWT and API secrets | Only in Supabase. The service role key is imported only from `server-only` modules. |
 | Passwords | Supabase Auth (bcrypt). Client policy matches the server policy. |
-| MFA | TOTP via Supabase (`/mfa`). |
+| Sign in | There is no login page. The server opens a session for one shared account (`AUTO_LOGIN_EMAIL`, `AUTO_LOGIN_PASSWORD`, server-only) so anyone who visits the site sees the data. Treat the site URL as public access to that business. |
 | CORS | Same-origin only. No wildcard. |
 | Tokens in storage | Sessions live in HTTP-only cookies via `@supabase/ssr`, never `localStorage`. |
 | Server-side permissions | Role matrix in `src/domain/permissions.ts`, mirrored in SQL `has_permission`. A test asserts they agree for every role, module and action. |

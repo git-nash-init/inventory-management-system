@@ -3,8 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { DATA_MODE, SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
 import { clientIp, rateLimit } from "@/lib/security/rate-limit";
 
-const PROTECTED = ["/dashboard", "/inventory", "/sales", "/purchases", "/accounting", "/settings"];
-const AUTH_PAGES = ["/login", "/signup", "/forgot-password"];
+// There is no login page. The server signs in to the shared account below on a visitor's first request
+// and stores the session in cookies, so Row Level Security still applies to every query.
+// Set both in the host's environment variables (server only, never NEXT_PUBLIC_).
+const AUTO_LOGIN_EMAIL = process.env.AUTO_LOGIN_EMAIL ?? "";
+const AUTO_LOGIN_PASSWORD = process.env.AUTO_LOGIN_PASSWORD ?? "";
 
 function buildCsp(nonce: string) {
   const dev = process.env.NODE_ENV === "development";
@@ -38,13 +41,11 @@ function buildCsp(nonce: string) {
 }
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
   const ip = clientIp(request.headers);
 
-  // Rate limiting: tight on auth endpoints, looser on any mutation.
-  const isAuthPath = AUTH_PAGES.some((p) => pathname.startsWith(p)) || pathname.startsWith("/mfa");
+  // Rate limiting on any mutation.
   if (request.method === "POST") {
-    const lim = isAuthPath ? rateLimit(`auth:${ip}`, 10, 60_000) : rateLimit(`mut:${ip}`, 120, 60_000);
+    const lim = rateLimit(`mut:${ip}`, 120, 60_000);
     if (!lim.allowed) {
       return new NextResponse("Too many requests. Wait a moment and try again.", {
         status: 429,
@@ -73,21 +74,9 @@ export async function proxy(request: NextRequest) {
     });
     // Must run before any response is built so a refreshed token can be written to cookies.
     const { data } = await supabase.auth.getClaims();
-    const signedIn = Boolean(data?.claims);
-
-    if (!signedIn && PROTECTED.some((p) => pathname.startsWith(p))) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.search = `?next=${encodeURIComponent(pathname)}`;
-      const redirect = NextResponse.redirect(url);
-      redirect.headers.set("Content-Security-Policy", csp);
-      return redirect;
-    }
-    if (signedIn && AUTH_PAGES.some((p) => pathname.startsWith(p))) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      url.search = "";
-      return NextResponse.redirect(url);
+    if (!data?.claims && AUTO_LOGIN_EMAIL && AUTO_LOGIN_PASSWORD) {
+      const { error } = await supabase.auth.signInWithPassword({ email: AUTO_LOGIN_EMAIL, password: AUTO_LOGIN_PASSWORD });
+      if (error) console.error("[auto-login] sign in failed:", error.code ?? error.message);
     }
     response.headers.set("Cache-Control", "private, no-store");
   }

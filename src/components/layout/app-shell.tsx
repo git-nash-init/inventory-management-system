@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Field, Input, NativeSelect } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { SessionExpiredDialog } from "@/components/states/session-expired";
 import { AccessDenied } from "@/components/states/permission-denied";
 import { PageSkeleton } from "@/components/states/skeletons";
 import { useAuth } from "@/lib/auth/context";
-import { createBusinessAction, reauthAction } from "@/lib/auth/actions";
+import { createBusinessAction } from "@/lib/auth/actions";
 import { useBusiness } from "@/data/hooks";
 import { moduleForPath, rolesFor, ROLE_LABEL } from "@/domain/permissions";
 import { STATES } from "@/lib/gst/states";
@@ -90,16 +90,11 @@ function CreateBusiness({ onDone }: { onDone: () => void }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { status, user, role, demo, can, refresh } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
   const business = useBusiness();
   const { collapsed, toggle } = useCollapsed();
   const [drawer, setDrawer] = React.useState(false);
   const [search, setSearch] = React.useState(false);
-
-  React.useEffect(() => {
-    if (status === "signedOut") router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-  }, [status, router, pathname]);
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -118,7 +113,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => cancelAnimationFrame(id);
   }, [pathname]);
 
-  if (status === "loading" || status === "signedOut") {
+  if (status === "signedOut") {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="max-w-md text-center">
+          <h1 className="text-lg font-semibold">Could not open your data</h1>
+          <p className="mt-2 text-sm text-muted">The app could not connect to its database account. Reload the page. If this keeps happening, check that AUTO_LOGIN_EMAIL and AUTO_LOGIN_PASSWORD are set on the server.</p>
+          <Button variant="primary" className="mt-4" onClick={() => window.location.reload()}>Reload</Button>
+        </div>
+      </div>
+    );
+  }
+  if (status === "loading") {
     return (
       <div className="flex min-h-screen" aria-busy="true">
         <div className="hidden w-60 border-r border-line bg-surface p-3 md:block">
@@ -178,11 +184,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <CommandPalette open={search} onOpenChange={setSearch} />
       <SessionExpiredDialog
-        email={user?.email}
-        onReauth={async (email, password) => {
-          if (demo) return { ok: true };
-          const res = await reauthAction({ email, password });
-          return res.ok ? { ok: true } : { ok: false, message: res.message };
+        onReconnect={async () => {
+          if (demo) return true;
+          // Any page request lets the server open a fresh session (see src/proxy.ts).
+          const res = await fetch("/dashboard", { cache: "no-store", credentials: "same-origin" });
+          return res.ok;
         }}
       />
     </div>

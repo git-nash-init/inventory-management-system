@@ -11,7 +11,7 @@ const ROUTES = [
   "/settings/business", "/settings/invoice", "/settings/taxes", "/settings/users", "/settings/activity",
 ];
 
-const PUBLIC = ["/", "/login", "/signup", "/forgot-password", "/mfa", "/terms", "/privacy", "/help"];
+const PUBLIC = ["/terms", "/privacy", "/help"];
 
 function watch(page: Page) {
   const errors: string[] = [];
@@ -36,7 +36,7 @@ test("public pages render with a heading and no errors", async ({ page }) => {
 });
 
 test("security headers and CSP are set", async ({ request }) => {
-  const res = await request.get("/login");
+  const res = await request.get("/dashboard");
   const h = res.headers();
   expect(h["x-frame-options"]).toBe("DENY");
   expect(h["x-content-type-options"]).toBe("nosniff");
@@ -46,11 +46,10 @@ test("security headers and CSP are set", async ({ request }) => {
   expect(h["x-powered-by"]).toBeUndefined();
 });
 
-test("every app route renders for a signed in demo user without errors", async ({ page }) => {
+test("every app route renders without any sign in without errors", async ({ page }) => {
   test.setTimeout(300_000);
   const errors = watch(page);
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Open the demo business" }).click();
+  await page.goto("/");
   await page.waitForURL("**/dashboard");
   for (const path of ROUTES) {
     const before = errors.length;
@@ -65,8 +64,7 @@ test("every app route renders for a signed in demo user without errors", async (
 
 test("create product, buy it, sell it, get paid, books balance", async ({ page }) => {
   const errors = watch(page);
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Open the demo business" }).click();
+  await page.goto("/");
   await page.waitForURL("**/dashboard");
 
   // Product

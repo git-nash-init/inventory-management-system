@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import type { Role } from "@/domain/types";
 import { can, type Action, type Module } from "@/domain/permissions";
 import { isDemo } from "@/lib/env";
@@ -40,7 +39,6 @@ export function useAuth(): AuthState {
 const ROLES: Role[] = ["owner", "manager", "accountant", "sales", "storekeeper"];
 
 function DemoAuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const sessionRaw = React.useSyncExternalStore(subscribeDemo, getDemoSessionRaw, () => null);
   const roleRaw = React.useSyncExternalStore(subscribeDemo, getDemoRoleRaw, () => null);
   const [hydrated, setHydrated] = React.useState(false);
@@ -48,17 +46,17 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
     const id = requestAnimationFrame(() => setHydrated(true));
     return () => cancelAnimationFrame(id);
   }, []);
-  const user = parseDemoUser(sessionRaw);
+  // No sign in: the offline demo store opens straight to a default owner.
+  const user = parseDemoUser(sessionRaw) ?? { id: "demo-user", email: "owner@khatabooks.local", name: "Owner" };
   const role: Role = ROLES.includes(roleRaw as Role) ? (roleRaw as Role) : "owner";
 
   const value: AuthState = {
-    status: !hydrated ? "loading" : user ? "signedIn" : "signedOut",
+    status: !hydrated ? "loading" : "signedIn",
     user,
     role,
     demo: true,
     signOut: async () => {
       demoSignOut();
-      router.push("/login");
     },
     switchDemoRole: setDemoRole,
     can: (m, a) => can(role, m, a),

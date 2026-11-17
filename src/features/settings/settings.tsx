@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -253,7 +252,7 @@ export function UsersSettings() {
           </tbody>
         </table></div>
       </Panel>
-      <p className="mt-4 text-sm text-muted">Your role: <strong className="text-ink">{ROLE_LABEL[myRole]}</strong>. Owners and accountants should turn on two-factor authentication: <Link className="link" href="/mfa">set it up</Link>.</p>
+      <p className="mt-4 text-sm text-muted">Your role: <strong className="text-ink">{ROLE_LABEL[myRole]}</strong>.</p>
       <InviteDialog open={open} onOpenChange={setOpen} />
     </>
   );
