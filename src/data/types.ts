@@ -2,6 +2,8 @@ export type Product = {
   id: string;
   name: string;
   unit: string;
+  /** Group such as "Pipe" or "Water tank". Empty when the product has none. */
+  category: string;
   buyPrice: number;
   sellPrice: number;
   lowStockAt: number | null;

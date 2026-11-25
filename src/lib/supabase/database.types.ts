@@ -111,6 +111,7 @@ export type Database = {
         Row: {
           active: boolean;
           buy_price: number;
+          category: string;
           created_at: string;
           id: string;
           low_stock_at: number | null;
@@ -121,6 +122,7 @@ export type Database = {
         Insert: {
           active?: boolean;
           buy_price?: number;
+          category?: string;
           created_at?: string;
           id?: string;
           low_stock_at?: number | null;
@@ -131,6 +133,7 @@ export type Database = {
         Update: {
           active?: boolean;
           buy_price?: number;
+          category?: string;
           created_at?: string;
           id?: string;
           low_stock_at?: number | null;
@@ -224,6 +227,7 @@ export type Database = {
         Row: {
           active: boolean | null;
           buy_price: number | null;
+          category: string | null;
           created_at: string | null;
           id: string | null;
           low_stock_at: number | null;

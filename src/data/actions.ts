@@ -10,6 +10,7 @@ import type { Shop } from "./types";
 export type NewProduct = {
   name: string;
   unit: string;
+  category: string;
   buyPrice: number;
   sellPrice: number;
   lowStockAt: number | null;
@@ -29,7 +30,7 @@ export async function addProduct(p: NewProduct): Promise<void> {
   const sb = getSupabase();
   const { data, error } = await sb
     .from("products")
-    .insert({ name: p.name.trim(), unit: p.unit, buy_price: p.buyPrice, sell_price: p.sellPrice, low_stock_at: p.lowStockAt })
+    .insert({ name: p.name.trim(), unit: p.unit, category: p.category.trim(), buy_price: p.buyPrice, sell_price: p.sellPrice, low_stock_at: p.lowStockAt })
     .select("id")
     .single();
   if (error) throw error;
@@ -42,7 +43,7 @@ export async function addProduct(p: NewProduct): Promise<void> {
 export async function updateProduct(id: string, p: ProductChanges): Promise<void> {
   const { error } = await getSupabase()
     .from("products")
-    .update({ name: p.name.trim(), unit: p.unit, buy_price: p.buyPrice, sell_price: p.sellPrice, low_stock_at: p.lowStockAt })
+    .update({ name: p.name.trim(), unit: p.unit, category: p.category.trim(), buy_price: p.buyPrice, sell_price: p.sellPrice, low_stock_at: p.lowStockAt })
     .eq("id", id);
   if (error) throw error;
 }

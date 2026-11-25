@@ -3,7 +3,7 @@
 A very simple stock and billing app for a small shop. There is **no login**: opening the site shows the data straight away.
 
 - **Home**: sold, bought and profit for the dates you pick, what was sold, stock left, low stock, latest bills. Buttons next to the title choose the dates: Today, Yesterday, This week (Monday to Sunday), This month (the default), This year, or Custom dates. The exact dates being shown, for example `1 – 30 Nov 2026`, are written on the right. Stock left is always what is in the shop right now.
-- **Stock**: add products, add stock when new goods come in, fix a quantity.
+- **Stock**: add products, add stock when new goods come in, fix a quantity. Products have a group (Pipe, Water tank ...); search and the group list narrow a long list.
 - **Make bill**: customer name and mobile, items, optional GST % for the whole bill. Selling more than is in stock is refused.
 - **All bills / one bill**: print the bill (shop name, address, phone on top, bank details at the bottom). A bill can be cancelled, which puts the stock back.
 - **Shop details**: the name, address, phone and bank details printed on every bill.
@@ -19,7 +19,8 @@ A very simple stock and billing app for a small shop. There is **no login**: ope
 
 1. Create a Supabase project and run the files in `supabase/migrations` in order in its SQL editor (5 tables, a stock view and the functions the app calls).
 2. Copy `.env.example` to `.env.local` and fill in the project URL and the publishable (anon) key.
-3. `npm install`, then `npm run dev`.
+3. Optional: run `supabase/seed/catalogue.sql` to load the shop's 147 products (prices and quantities start at 0).
+4. `npm install`, then `npm run dev`.
 
 ```
 npm run typecheck   # TypeScript

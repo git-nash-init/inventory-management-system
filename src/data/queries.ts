@@ -28,6 +28,7 @@ function toProduct(r: StockRow): Product {
     id: r.id ?? "",
     name: r.name ?? "",
     unit: r.unit ?? "piece",
+    category: r.category ?? "",
     buyPrice: num(r.buy_price),
     sellPrice: num(r.sell_price),
     lowStockAt: r.low_stock_at === null || r.low_stock_at === undefined ? null : num(r.low_stock_at),

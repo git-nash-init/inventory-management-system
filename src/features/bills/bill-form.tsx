@@ -16,6 +16,7 @@ import { useProducts } from "@/data/queries";
 import { calcBill, isValidMobile, parseNumber } from "@/lib/bill";
 import { formatQty } from "@/lib/format/money";
 import { useI18n } from "@/lib/i18n";
+import { groupProducts } from "@/lib/products";
 
 type Row = { key: number; productId: string; qty: string; price: string };
 type RowErrors = { product?: string; qty?: string; price?: string };
@@ -52,7 +53,8 @@ export function BillForm() {
 
   function pickProduct(key: number, productId: string) {
     const p = byId.get(productId);
-    update(key, { productId, price: p ? String(p.sellPrice) : "" });
+    // No selling price saved yet: leave it empty so a bill is not made at 0 by mistake.
+    update(key, { productId, price: p && p.sellPrice > 0 ? String(p.sellPrice) : "" });
   }
 
   function submit(e: React.FormEvent) {
@@ -135,10 +137,14 @@ export function BillForm() {
                   <Field label={t("bill.product")} htmlFor={`b-p-${r.key}`} error={re.product}>
                     <NativeSelect id={`b-p-${r.key}`} value={r.productId} onChange={(e) => pickProduct(r.key, e.target.value)} aria-invalid={Boolean(re.product)} className="h-11 text-base">
                       <option value="">{t("bill.chooseProduct")}</option>
-                      {list.map((x) => (
-                        <option key={x.id} value={x.id} disabled={x.quantity <= 0}>
-                          {x.name} ({x.quantity > 0 ? t("bill.left", { qty: formatQty(x.quantity), unit: unit(x.unit) }) : t("bill.finished")})
-                        </option>
+                      {groupProducts(list).map((g) => (
+                        <optgroup key={g.group} label={g.group || t("stock.otherGroup")}>
+                          {g.items.map((x) => (
+                            <option key={x.id} value={x.id} disabled={x.quantity <= 0}>
+                              {x.name} ({x.quantity > 0 ? t("bill.left", { qty: formatQty(x.quantity), unit: unit(x.unit) }) : t("bill.finished")})
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
                     </NativeSelect>
                   </Field>

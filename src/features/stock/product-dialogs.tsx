@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, NativeSelect } from "@/components/ui/input";
 import { addProduct, addStock, removeProduct, updateProduct, useAction } from "@/data/actions";
+import { useProducts } from "@/data/queries";
 import type { Product } from "@/data/types";
 import { parseNumber } from "@/lib/bill";
 import { formatQty } from "@/lib/format/money";
 import { UNITS, useI18n } from "@/lib/i18n";
+import { groupNames } from "@/lib/products";
 
 type Errors = Record<string, string | undefined>;
 
@@ -30,6 +32,8 @@ function ProductForm({ product, onDone }: { product?: Product; onDone: () => voi
   const { t, unit } = useI18n();
   const [name, setName] = React.useState(product?.name ?? "");
   const [unitValue, setUnitValue] = React.useState(product?.unit ?? "kg");
+  const [category, setCategory] = React.useState(product?.category ?? "");
+  const groups = groupNames(useProducts().data ?? []);
   const [buy, setBuy] = React.useState(product ? String(product.buyPrice) : "");
   const [sell, setSell] = React.useState(product ? String(product.sellPrice) : "");
   const [low, setLow] = React.useState(product?.lowStockAt != null ? String(product.lowStockAt) : "");
@@ -38,7 +42,7 @@ function ProductForm({ product, onDone }: { product?: Product; onDone: () => voi
   const [confirmRemove, setConfirmRemove] = React.useState(false);
 
   const save = useAction(
-    async (v: { name: string; unit: string; buyPrice: number; sellPrice: number; lowStockAt: number | null; openingQty: number }) => {
+    async (v: { name: string; unit: string; category: string; buyPrice: number; sellPrice: number; lowStockAt: number | null; openingQty: number }) => {
       if (product) await updateProduct(product.id, v);
       else await addProduct(v);
     },
@@ -63,6 +67,7 @@ function ProductForm({ product, onDone }: { product?: Product; onDone: () => voi
     save.mutate({
       name,
       unit: unitValue,
+      category,
       buyPrice: buyPrice ?? 0,
       sellPrice: sellPrice ?? 0,
       lowStockAt: lowStockAt !== null && lowStockAt >= 0 ? lowStockAt : null,
@@ -74,6 +79,14 @@ function ProductForm({ product, onDone }: { product?: Product; onDone: () => voi
     <form onSubmit={submit} className="space-y-3" noValidate>
       <Field label={t("product.name")} htmlFor="p-name" error={errors.name} required>
         <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={Boolean(errors.name)} autoFocus className="h-11 text-base" />
+      </Field>
+      <Field label={`${t("product.group")} ${t("common.optional")}`} htmlFor="p-group" hint={t("product.groupHint")}>
+        <Input id="p-group" list="p-groups" value={category} onChange={(e) => setCategory(e.target.value)} maxLength={40} autoComplete="off" className="h-11 text-base" />
+        <datalist id="p-groups">
+          {groups.map((g) => (
+            <option key={g} value={g} />
+          ))}
+        </datalist>
       </Field>
       <Field label={t("product.unit")} htmlFor="p-unit">
         <NativeSelect id="p-unit" value={unitValue} onChange={(e) => setUnitValue(e.target.value)} className="h-11 text-base">
@@ -147,7 +160,8 @@ export function AddStockDialog({ product, onClose }: { product: Product | null; 
 function AddStockForm({ product, onDone }: { product: Product; onDone: () => void }) {
   const { t, unit } = useI18n();
   const [qty, setQty] = React.useState("");
-  const [price, setPrice] = React.useState(String(product.buyPrice));
+  // Left empty while no buying price is known, so the shop types the real one.
+  const [price, setPrice] = React.useState(product.buyPrice > 0 ? String(product.buyPrice) : "");
   const [note, setNote] = React.useState("");
   const [errors, setErrors] = React.useState<Errors>({});
   const u = unit(product.unit);
